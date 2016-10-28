@@ -1,0 +1,5 @@
+FROM mysql:5.6
+
+ADD ./tas.db.cnf /etc/mysql/conf.d/tas.cnf
+RUN chmod 0644 /etc/mysql/conf.d/tas.cnf
+

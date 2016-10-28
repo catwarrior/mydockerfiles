@@ -1,0 +1,57 @@
+#FROM openjdk:8
+#FROM jboss/base-jdk:8
+
+FROM ubuntu:trusty
+
+# A few problems with compiling Java from source:
+#  1. Oracle.  Licensing prevents us from redistributing the official JDK.
+#  2. Compiling OpenJDK also requires the JDK to be installed, and it gets
+#       really hairy.
+
+ADD ./sources.list /etc/apt/sources.list
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        mysql-client \
+	&& rm -rf /var/lib/apt/lists/*
+
+########## tas
+ENV ANT_PACKAGE apache-ant-1.9.2-bin.tar.gz
+ENV ANT_HOME /opt/tctools/ant
+
+ENV WILDFLY_PACKAGE wildfly-8.2.1.Final.tar.gz
+ENV WILDFLY_HOME /opt/tctools/jboss
+
+ENV JDK_PACKAGE jdk-8u102-linux-x64.tar.gz
+ENV JDK_HOME /opt/tctools/jdk
+
+ENV TAS_HOME /tashome
+ENV TAS_PACKAGE tasprod-TAS-OFF-R6V5P1-jboss-20160823-1039.tar.gz
+
+########## sky
+ENV SKY_PACKAGE skyprod-SKYP-3.0.7-OFF-20160823-1907.tar.gz
+ADD $SKY_PACKAGE /
+
+RUN mkdir -p $JDK_HOME \
+             $ANT_HOME \
+             $WILDFLY_HOME \
+             $TAS_HOME
+
+ADD $JDK_PACKAGE $JDK_HOME
+ADD $ANT_PACKAGE $ANT_HOME
+ADD $WILDFLY_PACKAGE $WILDFLY_HOME
+ADD $TAS_PACKAGE $TAS_HOME
+
+COPY ./tasrtenv.sh $TAS_HOME/tasrtenv.sh
+COPY ./tasrtenv_build.sh $TAS_HOME/tasrtenv_build.sh
+RUN ["/bin/bash", "-c", ". $TAS_HOME/tasrtenv_build.sh && taspatch.sh || true"]
+RUN ["/bin/bash", "-c", "cp /skyprod/abs/prod/tasmib/* $TAS_HOME/var/jsvr/tasmib/deployments \
+                         && cp /skyprod/acc/prod/tasmib/* $TAS_HOME/var/jsvr/tasmib/deployments \
+                         && cp /skyprod/eml/prod/tasmib/* $TAS_HOME/var/jsvr/tasmib/deployments"]
+RUN echo source $TAS_HOME/tasrtenv.sh >> /root/.bashrc \
+    && chmod +x $TAS_HOME/tasrtenv.sh \
+    && rm $TAS_HOME/tasrtenv_build.sh
+
+WORKDIR $TAS_HOME
+COPY ./entrypoint.sh /usr/local/bin
+
+ENTRYPOINT ["entrypoint.sh"]
