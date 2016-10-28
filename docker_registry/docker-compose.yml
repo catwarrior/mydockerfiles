@@ -1,0 +1,9 @@
+version: '2'
+services:
+  registry:
+    image: registry:2.2
+    volumes: 
+      - ../:/var/lib/registry
+    command: /var/lib/registry/registry/config.yml
+    ports: 
+      - "5000:5000"

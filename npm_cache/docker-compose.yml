@@ -1,0 +1,10 @@
+version: '2'
+services:
+  npmcache:
+    image: sonatype/nexus:oss
+    volumes_from: 
+      - npmcache-data
+    ports: 
+      - "8081:8081"
+  npmcache-data:
+    image: sonatype/nexus:oss
